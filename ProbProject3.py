@@ -4,7 +4,8 @@ import matplotlib.pyplot as plt
 
 
 use_random_number_generator = True
-files = ["10", "30", "50", "100", "250", "500", "1000"]
+samples = [10, 30, 50, 100, 250, 500, 1000]
+number_of_estimates = 110
 
 #Variables used for random number generator
 x = 1000
@@ -66,12 +67,55 @@ def m_n_of_x(sample_size):
     return total / sample_size
 
 
-def get_estimates_of_m_n(files, estimates_needed):
+def get_estimates_of_m_n(files):
     for sample_size in files:
-        file = open_file(sample_size + ".txt")
-        for i in range(estimates_needed):
-            file.write(str(round(m_n_of_x(int(sample_size)), 4)) + "\n")
+        file = open_file(str(sample_size) + ".txt")
+        for i in range(number_of_estimates):
+            file.write(str(round(m_n_of_x(sample_size), 4)) + "\n")
         file.close()
+
+
+def get_sample_variance(file):
+    total = 0
+    for i in range(number_of_estimates):
+        line = file.readline()
+        total += abs((float(line)**2) - (mu_x**2))
+    return total / number_of_estimates
+
+
+
+def get_sample_mean(file):
+    total = 0
+    for i in range(number_of_estimates):
+        line = file.readline()
+        total += float(line)
+    return total / number_of_estimates
+
+
+def get_sample_data():
+    for sample_size in samples:
+        file = open(str(sample_size) + ".txt", 'r')
+        mean = get_sample_mean(file)
+        file.close()
+        file = open(str(sample_size) + ".txt", 'r')
+        variance = get_sample_variance(file)
+        file.close()
+        print(str(sample_size), "mean:", mean, "variance:", variance)
+
+
+
+def make_plot():
+    plt.title("$M_{n}$ Random Variable")
+    plt.xlabel("Sample size $n$")
+    plt.ylabel("$m_{n}$")
+    plt.axhline(mu_x)
+    for sample_size in samples:
+        file = open(str(sample_size) + ".txt", 'r')
+        for i in range(number_of_estimates):
+            line = file.readline()
+            plt.plot([sample_size], [float(line)], marker="o", markersize=2,markeredgecolor="red",markerfacecolor="red")
+        file.close()
+    plt.show()
 
 
 def main():
@@ -81,28 +125,13 @@ def main():
     print("mu_x:", mu_x)
     print("var_x:", var_x)
     print("sigma_x:", sigma_x)
-    estimates_needed = 110
-    get_estimates_of_m_n(files, estimates_needed)
+    get_estimates_of_m_n(samples)
     recommeneded_sample = var_x / 10
     print(recommeneded_sample)
-    print(get_u_values())
+    get_sample_data()
+    # print(get_u_values())
 
 
 main()
-
-
-def make_plot():
-    plt.title("M_n Random Variable")
-    plt.xlabel("Sample size n")
-    plt.ylabel("m_n")
-    plt.axhline(mu_x)
-    for sample_size in files:
-        file = open(sample_size + ".txt", 'r')
-        for i in range(110):
-            line = file.readline()
-            plt.plot([int(sample_size)], [float(line)], marker="o", markersize=2,markeredgecolor="red",markerfacecolor="red")
-        file.close()
-    plt.show()
-
 
 make_plot()
