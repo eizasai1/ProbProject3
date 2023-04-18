@@ -79,12 +79,12 @@ def get_estimates_of_m_n():
         file.close()
 
 
-def get_sample_variance(file, sample):
+def get_sample_variance(file, sample, mean):
     total = 0
     for i in range(number_of_estimates[sample]):
         line = file.readline()
         total += (float(line)**2)
-    return abs((total / number_of_estimates[sample]) - (mu_x**2))
+    return abs((total / number_of_estimates[sample]) - (mean**2))
 
 
 
@@ -112,7 +112,7 @@ def get_sample_data():
         mean = get_sample_mean(file, sample_size)
         file.close()
         file = open(str(samples[sample_size]) + ".txt", 'r')
-        variance = get_sample_variance(file, sample_size)
+        variance = get_sample_variance(file, sample_size, mean)
         file.close()
         file = open(str(samples[sample_size]) + ".txt", 'r')
         get_z_n_values(file, sample_size)
