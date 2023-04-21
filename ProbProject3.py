@@ -1,6 +1,8 @@
 import math
 import random
 import matplotlib.pyplot as plt
+import scipy.stats as ss
+import numpy as np
 
 
 use_random_number_generator = True
@@ -96,10 +98,10 @@ def get_sample_mean(file, sample):
     return total / number_of_estimates[sample]
 
 
-def get_z_n_values(file, sample_size):
-    file2 = open("z_n" + str(samples[sample_size]) + ".txt", 'w')
+def get_m_n_values(file, sample_size):
+    file2 = open("m_n" + str(samples[sample_size]) + ".txt", 'w')
     file2.close()
-    file2 = open("z_n" + str(samples[sample_size]) + ".txt", 'a')
+    file2 = open("m_n" + str(samples[sample_size]) + ".txt", 'a')
     for i in range(number_of_estimates[sample_size]):
         m_n = float(file.readline())
         z_n = (m_n - mu_x) / math.sqrt(var_x / math.sqrt(samples[sample_size]))
@@ -107,6 +109,7 @@ def get_z_n_values(file, sample_size):
 
 
 def get_sample_data():
+    means, variances = [], []
     for sample_size in range(len(samples)):
         file = open(str(samples[sample_size]) + ".txt", 'r')
         mean = get_sample_mean(file, sample_size)
@@ -115,9 +118,13 @@ def get_sample_data():
         variance = get_sample_variance(file, sample_size, mean)
         file.close()
         file = open(str(samples[sample_size]) + ".txt", 'r')
-        get_z_n_values(file, sample_size)
+        get_m_n_values(file, sample_size)
         file.close()
         print("Sample Size:", str(samples[sample_size]), "mean:", mean, "variance:", variance)
+        means.append(mean)
+        variances.append(variance)
+    return means, variances
+
 
 
 
@@ -135,6 +142,73 @@ def make_plot():
     plt.show()
 
 
+def tofloat(number):
+    for i in range(len(number)):
+        try:
+            return float(number[i:])
+        except ValueError:
+            None
+
+
+
+
+
+def put_data_bins(sample_index, mu_x, var_x, probability_values):
+    file = open(str(samples[sample_index]) + ".txt", 'r')
+    file2 = open("z_n" + str(samples[sample_index]) + ".txt", 'a')
+    data = [0 for i in range(7)]
+    total = 0
+    for i in range(number_of_estimates[sample_index]):
+        line = float(file.readline())
+        z = (line - mu_x) / math.sqrt(var_x)
+        file2.write(str(z))
+        # print(line, mu_x, var_x)
+        if z <= -1.4:
+            data[0] += 1
+        if z <= -1:
+            data[1] += 1
+        if z <= -0.5:
+            data[2] += 1
+        if z <= 0:
+            data[3] += 1
+        if z <= 0.5:
+            data[4] += 1
+        if z <= 1:
+            data[5] += 1
+        if z <= 1.4:
+            data[6] += 1
+        total += 1
+    for i in range(len(data)):
+        data[i] = data[i] / total
+    file.close()
+    file2.close()
+    mad_values = [-1 for i in range(7)]
+    for i in range(len(probability_values)):
+        mad_values[i] = abs(data[i] - probability_values[i])
+    # print("data for population of sample n = " + str(samples[sample_index]))
+    # print(mad_values)
+    # print(max(mad_values))
+    return data, mad_values.index(max(mad_values))
+
+
+def plot_data(means, variances):
+    z_scores = [-1.4, -1, -0.5, 0, 0.5, 1, 1.4]
+    probability_values = [0.0808, 0.1587, 0.3086, 0.5, 0.6915, 0.8413, 0.9192]
+    z_score = np.linspace(-2.5, 2.5, 1000)
+    probs = ss.norm.cdf(z_score)
+    for i in range(4):
+        data, mad = put_data_bins(i, means[i], variances[i], probability_values)
+        mad_points = [data[mad], probability_values[mad]]
+        plt.title("CDF of Standard Normal and Population (n,K) = (" + str(samples[i]) + "," + str(number_of_estimates[i]) + ")")
+        plt.xlabel("Normalized Z Scores")
+        plt.ylabel("Probability")
+        plt.scatter(z_scores, data, marker="o", label="CDF of Population (" + str(samples[i]) + ", " + str(number_of_estimates[i]) + ")")
+        plt.plot(z_score, probs, label="CDF of Standard Normal")
+        plt.plot([z_scores[mad], z_scores[mad]], mad_points, label="Maximum Absolute Difference")
+        plt.legend()
+        plt.show()
+
+
 def main():
     print("Rayleigh Distribution of X")
     print("tau:", tau)
@@ -145,10 +219,13 @@ def main():
     get_estimates_of_m_n()
     recommended_sample = var_x / 10
     print(recommended_sample)
-    get_sample_data()
     # print(get_u_values())
 
 
 main()
 
 make_plot()
+
+means, variances = get_sample_data()
+
+plot_data(means, variances)
